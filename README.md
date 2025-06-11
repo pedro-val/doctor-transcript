@@ -94,4 +94,4 @@ Educational and demonstration purposes.
 
 ---
 
-Built with ❤️ using Next.js, TypeScript, and OpenAI APIs.
+Built with ❤️ for you mom!
