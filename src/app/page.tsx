@@ -56,7 +56,11 @@ export default function Home() {
       
       const transcriptionResult = await apiClient.transcribeAudio(
         audioSource,
-        setProgress
+        setProgress,
+        {
+          sending: t('processing.sending_audio'),
+          transcribing: t('processing.transcribing_audio')
+        }
       )
       
       setTranscription(transcriptionResult)
@@ -74,7 +78,13 @@ export default function Home() {
       
       const reportResult = await apiClient.generateReport(
         reportRequest,
-        setProgress
+        setProgress,
+        {
+          analyzing: t('processing.analyzing_transcription'),
+          preparing: t('processing.preparing_data'),
+          processing: t('processing.processing_ai'),
+          structuring: t('processing.structuring_report')
+        }
       )
       
       setReport(reportResult)
@@ -209,10 +219,10 @@ export default function Home() {
                     </div>
                   </div>
                   <h3 className="text-2xl font-semibold mb-2">
-                    🎤 Transcrevendo Áudio
+                    {t('processing.transcribing_title')}
                   </h3>
                   <p className="text-muted-foreground">
-                    Convertendo seu áudio em texto usando inteligência artificial
+                    {t('processing.transcribing_description')}
                   </p>
                 </div>
 
@@ -222,7 +232,7 @@ export default function Home() {
                     <div className="text-center">
                       <p className="text-lg font-medium text-primary mb-2">{progress.message}</p>
                       <div className="flex justify-center items-center gap-2 text-sm text-muted-foreground">
-                        <span>Etapa {progress.current} de {progress.total}</span>
+                        <span>{t('processing.step_of', { current: progress.current, total: progress.total })}</span>
                         <span>•</span>
                         <span>{Math.round((progress.current / progress.total) * 100)}%</span>
                       </div>
@@ -249,15 +259,13 @@ export default function Home() {
                         <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
                     </div>
-                    <p className="text-center text-muted-foreground">Iniciando transcrição...</p>
+                    <p className="text-center text-muted-foreground">{t('processing.initializing')}</p>
                   </div>
                 )}
 
                 <div className="mt-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    ⏱️ Este processo pode levar alguns minutos, dependendo do tamanho do arquivo.
-                    <br />
-                    💡 Mantenha esta janela aberta até a conclusão.
+                    {t('processing.transcribing_wait')}
                   </p>
                 </div>
               </CardContent>
@@ -278,10 +286,10 @@ export default function Home() {
                     </div>
                   </div>
                   <h3 className="text-2xl font-semibold mb-2">
-                    🧠 Gerando Relatório
+                    {t('processing.generating_title')}
                   </h3>
                   <p className="text-muted-foreground">
-                    Analisando a transcrição e criando um relatório estruturado
+                    {t('processing.generating_description')}
                   </p>
                 </div>
 
@@ -291,7 +299,7 @@ export default function Home() {
                     <div className="text-center">
                       <p className="text-lg font-medium text-green-600 mb-2">{progress.message}</p>
                       <div className="flex justify-center items-center gap-2 text-sm text-muted-foreground">
-                        <span>Etapa {progress.current} de {progress.total}</span>
+                        <span>{t('processing.step_of', { current: progress.current, total: progress.total })}</span>
                         <span>•</span>
                         <span>{Math.round((progress.current / progress.total) * 100)}%</span>
                       </div>
@@ -318,15 +326,13 @@ export default function Home() {
                         <div className="w-3 h-3 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
                     </div>
-                    <p className="text-center text-muted-foreground">Analisando com IA...</p>
+                    <p className="text-center text-muted-foreground">{t('processing.analyzing_ai')}</p>
                   </div>
                 )}
 
                 <div className="mt-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    ✨ A IA está processando sua transcrição para criar um relatório detalhado
-                    <br />
-                    📋 Em breve você terá seu relatório médico estruturado
+                    {t('processing.generating_wait')}
                   </p>
                 </div>
               </CardContent>
@@ -342,9 +348,9 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Transcrição do Áudio
+                  {t('report.transcription_title')}
                   <span className="text-sm text-muted-foreground font-normal">
-                    ({transcription.text.length} caracteres)
+                    {t('report.characters_count', { count: transcription.text.length })}
                   </span>
                 </CardTitle>
               </CardHeader>
@@ -365,7 +371,7 @@ export default function Home() {
               <CardContent className="p-4 text-center">
                 <Button onClick={handleStartOver} variant="outline" size="lg" className="gap-2">
                   <RotateCcw className="h-4 w-4" />
-                  Processar Nova Consulta
+                  {t('report.new_consultation')}
                 </Button>
               </CardContent>
             </Card>

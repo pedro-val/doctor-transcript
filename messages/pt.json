@@ -81,7 +81,24 @@
     "merging": "Unindo resultados...",
     "chunk_progress": "Processando segmento {current} de {total}",
     "transcription_progress": "Transcrição: {progress}%",
-    "report_progress": "Relatório: {progress}%"
+    "report_progress": "Relatório: {progress}%",
+    "transcribing_title": "🎤 Transcrevendo Áudio",
+    "transcribing_description": "Convertendo seu áudio em texto usando inteligência artificial",
+    "transcribing_progress": "Transcrevendo áudio...",
+    "transcribing_wait": "⏱️ Este processo pode levar alguns minutos, dependendo do tamanho do arquivo.\n💡 Mantenha esta janela aberta até a conclusão.",
+    "generating_title": "🧠 Gerando Relatório",
+    "generating_description": "Analisando a transcrição e criando um relatório estruturado",
+    "generating_wait": "✨ A IA está processando sua transcrição para criar um relatório detalhado\n📋 Em breve você terá seu relatório médico estruturado",
+    "step_of": "Etapa {current} de {total}",
+    "initializing": "Iniciando transcrição...",
+    "analyzing_ai": "Analisando com IA...",
+    "default_prompt": "Crie um relatório detalhado e estruturado baseado no conteúdo fornecido.",
+    "sending_audio": "Enviando áudio para transcrição...",
+    "transcribing_audio": "Transcrevendo áudio...",
+    "analyzing_transcription": "Analisando transcrição médica...",
+    "preparing_data": "Preparando dados para IA...",
+    "processing_ai": "Processando com inteligência artificial...",
+    "structuring_report": "Estruturando relatório final..."
   },
   "report": {
     "title": "Relatório Gerado",
@@ -91,9 +108,17 @@
     "copy_report": "Copiar Relatório",
     "download_report": "Baixar Relatório",
     "start_over": "Começar Novamente",
-    "processing_time": "Tempo de processamento: {time}",
+    "processing_time": "Gerado em {time}",
     "copied_success": "Relatório copiado para a área de transferência!",
-    "download_filename": "relatorio-medical-{timestamp}.txt"
+    "download_filename": "relatorio-medical-{timestamp}.txt",
+    "copy_text": "Copiar Texto",
+    "download_txt": "Baixar .txt",
+    "new_consultation": "Processar Nova Consulta",
+    "characters_count": "({count} caracteres)",
+    "tokens_used": "{count} tokens utilizados",
+    "prompt_used": "Prompt utilizado:",
+    "report_content": "Relatório:",
+    "important_notice": "Importante: Este relatório foi gerado por inteligência artificial baseado na transcrição fornecida. Sempre revise e valide as informações antes de utilizar em contextos médicos profissionais."
   },
   "theme": {
     "toggle": "Alternar tema",
@@ -116,6 +141,7 @@
     "back": "Voltar",
     "next": "Próximo",
     "previous": "Anterior",
-    "retry": "Tentar novamente"
+    "retry": "Tentar novamente",
+    "important": "Importante:"
   }
 } 

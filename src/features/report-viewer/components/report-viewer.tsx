@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { GeneratedReport } from '@/entities'
 import { copyToClipboard, downloadFile } from '@/shared/lib/utils'
+import { useTranslations } from '@/shared/hooks/use-translations'
 
 interface ReportViewerProps {
   report: GeneratedReport
@@ -15,6 +16,7 @@ interface ReportViewerProps {
 export function ReportViewer({ report, className }: ReportViewerProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const { t } = useTranslations()
 
   const handleCopy = async () => {
     try {
@@ -29,28 +31,14 @@ export function ReportViewer({ report, className }: ReportViewerProps) {
   const handleDownload = () => {
     try {
       setIsDownloading(true)
-      const filename = `relatorio-medico-${report.timestamp.toISOString().split('T')[0]}.txt`
-      const content = `RELATÓRIO MÉDICO GERADO POR IA
-      
-Data: ${report.timestamp.toLocaleString('pt-BR')}
-
-CONFIGURAÇÃO DA IA UTILIZADA:
-
-Prompt utilizado:
+      const filename = t('report.download_filename', { timestamp: report.timestamp.toISOString().split('T')[0] })
+      const content = `${t('report.title').toUpperCase()}
+      \n${t('report.processing_time', { time: report.timestamp.toLocaleString(navigator.language) })}
+\n${t('report.prompt_used')}
 ${report.prompt}
-
----
-
-RELATÓRIO GERADO:
-
-${report.content}
-
----
-
-Relatório gerado automaticamente pela aplicação
-ID do Relatório: ${report.id}
-${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
-`
+\n---\n\n${t('report.report_content')}\n\n${report.content}
+\n---\n\nID: ${report.id}
+${report.tokens ? `${report.tokens} tokens` : ''}`
       downloadFile(content, filename)
     } catch (error) {
       // Error handling could be improved with user notification
@@ -64,13 +52,13 @@ ${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Relatório Gerado
+          {t('report.title')}
         </CardTitle>
         <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <span>Gerado em {report.timestamp.toLocaleString('pt-BR')}</span>
+          <span>{t('report.processing_time', { time: report.timestamp.toLocaleString(navigator.language) })}</span>
           {report.tokens && (
             <span className="text-xs bg-muted px-2 py-1 rounded">
-              {report.tokens} tokens utilizados
+              {t('report.tokens_used', { count: report.tokens })}
             </span>
           )}
         </CardDescription>
@@ -79,7 +67,7 @@ ${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
       <CardContent className="space-y-4">
         {/* Prompt usado */}
         <div className="bg-muted/50 p-3 rounded-md">
-          <h4 className="text-sm font-medium mb-2">Prompt utilizado:</h4>
+          <h4 className="text-sm font-medium mb-2">{t('report.prompt_used')}</h4>
           <p className="text-sm text-muted-foreground whitespace-pre-wrap">
             {report.prompt}
           </p>
@@ -87,7 +75,7 @@ ${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
 
         {/* Conteúdo do relatório */}
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Relatório:</h4>
+          <h4 className="text-sm font-medium">{t('report.report_content')}</h4>
           <div className="bg-background border rounded-md p-4 max-h-96 overflow-y-auto">
             <div className="whitespace-pre-wrap text-sm leading-relaxed">
               {report.content}
@@ -106,12 +94,12 @@ ${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
             {isCopied ? (
               <>
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                Copiado!
+                {t('common.success')}
               </>
             ) : (
               <>
                 <Copy className="h-4 w-4" />
-                Copiar Texto
+                {t('report.copy_text')}
               </>
             )}
           </Button>
@@ -125,12 +113,12 @@ ${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
             {isDownloading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-                Baixando...
+                {t('common.loading')}
               </>
             ) : (
               <>
                 <Download className="h-4 w-4" />
-                Baixar .txt
+                {t('report.download_txt')}
               </>
             )}
           </Button>
@@ -139,9 +127,7 @@ ${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
         {/* Informações adicionais */}
         <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md">
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            <strong>Importante:</strong> Este relatório foi gerado por inteligência artificial 
-            baseado na transcrição fornecida. Sempre revise e valide as informações antes 
-            de utilizar em contextos médicos profissionais.
+            <strong>{t('common.important')}</strong> {t('report.important_notice')}
           </p>
         </div>
       </CardContent>

@@ -1,5 +1,17 @@
 import { TranscriptionResult, GeneratedReport, ReportRequest, ProcessingProgress } from '@/entities'
 
+interface TranscriptionMessages {
+  sending: string
+  transcribing: string
+}
+
+interface ReportMessages {
+  analyzing: string
+  preparing: string
+  processing: string
+  structuring: string
+}
+
 /**
  * Cliente para chamadas às API routes internas (seguras)
  * Em vez de chamar OpenAI diretamente do frontend
@@ -11,7 +23,8 @@ export class APIClient {
    */
   async transcribeAudio(
     audio: Blob | File, 
-    onProgress?: (progress: ProcessingProgress) => void
+    onProgress?: (progress: ProcessingProgress) => void,
+    messages?: TranscriptionMessages
   ): Promise<TranscriptionResult> {
     try {
   
@@ -22,7 +35,7 @@ export class APIClient {
         step: 'analyzing',
         current: 0,
         total: 1,
-        message: 'Enviando áudio para transcrição...'
+        message: messages?.sending || 'Enviando áudio para transcrição...'
       })
 
       // Prepara FormData
@@ -35,7 +48,7 @@ export class APIClient {
         step: 'processing',
         current: 1,
         total: 1,
-        message: 'Transcrevendo áudio...'
+        message: messages?.transcribing || 'Transcrevendo áudio...'
       })
 
       // Chama API route interna
@@ -67,7 +80,8 @@ export class APIClient {
    */
   async generateReport(
     request: ReportRequest,
-    onProgress?: (progress: ProcessingProgress) => void
+    onProgress?: (progress: ProcessingProgress) => void,
+    messages?: ReportMessages
   ): Promise<GeneratedReport> {
     try {
 
@@ -78,7 +92,7 @@ export class APIClient {
         step: 'analyzing',
         current: 1,
         total: 4,
-        message: 'Analisando transcrição médica...'
+        message: messages?.analyzing || 'Analisando transcrição médica...'
       })
       
       await new Promise(resolve => setTimeout(resolve, 800)) // Delay para mostrar animação
@@ -89,7 +103,7 @@ export class APIClient {
         step: 'processing',
         current: 2,
         total: 4,
-        message: 'Preparando dados para IA...'
+        message: messages?.preparing || 'Preparando dados para IA...'
       })
       
       await new Promise(resolve => setTimeout(resolve, 600))
@@ -100,7 +114,7 @@ export class APIClient {
         step: 'processing',
         current: 3,
         total: 4,
-        message: 'Processando com inteligência artificial...'
+        message: messages?.processing || 'Processando com inteligência artificial...'
       })
 
       // Chama API route interna
@@ -118,7 +132,7 @@ export class APIClient {
         step: 'merging',
         current: 4,
         total: 4,
-        message: 'Estruturando relatório final...'
+        message: messages?.structuring || 'Estruturando relatório final...'
       })
 
       if (!response.ok) {
