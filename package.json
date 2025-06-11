@@ -1,5 +1,5 @@
 {
-  "name": "doctor-ai",
+  "name": "medical-ai-assistant",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -17,6 +17,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.294.0",
     "next": "^15.3.3",
+    "next-intl": "^4.1.0",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.48.2",

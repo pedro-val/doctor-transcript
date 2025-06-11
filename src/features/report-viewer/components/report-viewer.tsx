@@ -22,7 +22,7 @@ export function ReportViewer({ report, className }: ReportViewerProps) {
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 2000)
     } catch (error) {
-      console.error('Erro ao copiar:', error)
+      // Error handling could be improved with user notification
     }
   }
 
@@ -36,10 +36,7 @@ Data: ${report.timestamp.toLocaleString('pt-BR')}
 
 CONFIGURAÇÃO DA IA UTILIZADA:
 
-System Prompt:
-${report.systemPrompt}
-
-Prompt de Instrução:
+Prompt utilizado:
 ${report.prompt}
 
 ---
@@ -50,13 +47,13 @@ ${report.content}
 
 ---
 
-Relatório gerado automaticamente pelo Doctor AI
+Relatório gerado automaticamente pela aplicação
 ID do Relatório: ${report.id}
 ${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
 `
       downloadFile(content, filename)
     } catch (error) {
-      console.error('Erro ao baixar:', error)
+      // Error handling could be improved with user notification
     } finally {
       setIsDownloading(false)
     }
@@ -80,21 +77,12 @@ ${report.tokens ? `Tokens utilizados: ${report.tokens}` : ''}
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Prompts usados */}
-        <div className="space-y-3">
-          <div className="bg-muted/50 p-3 rounded-md">
-            <h4 className="text-sm font-medium mb-2">System Prompt utilizado:</h4>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {report.systemPrompt}
-            </p>
-          </div>
-          
-          <div className="bg-muted/50 p-3 rounded-md">
-            <h4 className="text-sm font-medium mb-2">Prompt de instrução utilizado:</h4>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {report.prompt}
-            </p>
-          </div>
+        {/* Prompt usado */}
+        <div className="bg-muted/50 p-3 rounded-md">
+          <h4 className="text-sm font-medium mb-2">Prompt utilizado:</h4>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {report.prompt}
+          </p>
         </div>
 
         {/* Conteúdo do relatório */}

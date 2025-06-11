@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,11 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { ReportFormData } from '@/entities'
-
-const promptSchema = z.object({
-  prompt: z.string()
-    .min(20, 'O prompt deve ter pelo menos 20 caracteres para ser efetivo')
-})
+import { useTranslations } from '@/shared/hooks/use-translations'
+import { useLanguage } from '@/shared/providers/language-provider'
 
 interface PromptFormProps {
   onSubmit: (data: ReportFormData) => void
@@ -22,58 +19,88 @@ interface PromptFormProps {
   className?: string
 }
 
-const defaultPrompt = `Você é um assistente inteligente. Analise o conteúdo fornecido e responda de acordo com as instruções específicas que você receber.
-
-Mantenha-se fiel ao conteúdo original e siga exatamente as diretrizes que forem dadas.`
-
 export function PromptForm({ onSubmit, isLoading = false, showSubmitButton = true, className }: PromptFormProps) {
+  const { t } = useTranslations()
+  const { locale } = useLanguage()
   const initializedRef = useRef(false)
+  
+  const promptSchema = useMemo(() => z.object({
+    prompt: z.string()
+      .min(20, t('prompt.min_chars'))
+  }), [t])
+
+  const defaultPrompt = useMemo(() => t('prompt.default'), [t])
   
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isValid }
   } = useForm<ReportFormData>({
     resolver: zodResolver(promptSchema),
     mode: 'onChange',
     defaultValues: {
-      prompt: defaultPrompt
+      prompt: ''
     }
   })
 
   const currentPrompt = watch('prompt')
 
+  // Update form when locale changes - if field is empty, keep it empty to show placeholder
+  useEffect(() => {
+    if (!currentPrompt.trim()) {
+      setValue('prompt', '', { shouldValidate: false })
+    }
+  }, [locale, setValue, currentPrompt])
+
+  // Stable callback for onSubmit
+  const stableOnSubmit = useCallback((promptToUse: string) => {
+    if (promptToUse.length >= 20) {
+      onSubmit({ prompt: promptToUse })
+    }
+  }, [onSubmit])
+
   // Chama onSubmit automaticamente uma vez na inicialização se não há botão de submit
   useEffect(() => {
     if (!showSubmitButton && !initializedRef.current) {
       const timeoutId = setTimeout(() => {
-        if (isValid && currentPrompt) {
-          onSubmit({ prompt: currentPrompt })
+        // Só chama se o prompt atual tem pelo menos 20 caracteres
+        if (currentPrompt.trim().length >= 20) {
+          stableOnSubmit(currentPrompt.trim())
+          initializedRef.current = true
         }
-        initializedRef.current = true
       }, 100)
       
       return () => clearTimeout(timeoutId)
     }
-  }, [showSubmitButton, isValid, currentPrompt, onSubmit])
+  }, [showSubmitButton, currentPrompt, stableOnSubmit])
 
   // Chama onSubmit quando dados mudam (apenas após inicialização)
   useEffect(() => {
-    if (!showSubmitButton && initializedRef.current && isValid && currentPrompt) {
-      onSubmit({ prompt: currentPrompt })
+    if (!showSubmitButton && initializedRef.current) {
+      // Só chama se o prompt atual tem pelo menos 20 caracteres
+      if (currentPrompt.trim().length >= 20) {
+        stableOnSubmit(currentPrompt.trim())
+      }
     }
-  }, [currentPrompt, showSubmitButton, isValid, onSubmit])
+  }, [currentPrompt, showSubmitButton, stableOnSubmit])
+
+  const handleFormSubmit = useCallback((data: ReportFormData) => {
+    // Se o prompt está vazio, usa o padrão
+    const promptToUse = data.prompt.trim() || defaultPrompt
+    onSubmit({ prompt: promptToUse })
+  }, [onSubmit, defaultPrompt])
 
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Instruções
+          {t('prompt.title')}
         </CardTitle>
         <CardDescription>
-          Configure como a IA deve analisar e processar o conteúdo do áudio
+          {t('prompt.description')}
         </CardDescription>
       </CardHeader>
 
@@ -81,25 +108,25 @@ export function PromptForm({ onSubmit, isLoading = false, showSubmitButton = tru
         {/* Dicas */}
         <div className="bg-muted/50 p-4 rounded-md">
           <p className="text-sm text-muted-foreground">
-            <strong>💡 Dicas para melhores resultados:</strong>
+            <strong>{t('prompt.tips_title')}</strong>
           </p>
           <ul className="text-sm text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-            <li><strong>Personalidade:</strong> Defina quem é a IA (assistente, especialista, analista, etc.)</li>
-            <li><strong>Instruções:</strong> Seja específico sobre o que você quer que seja feito</li>
-            <li><strong>Formato:</strong> Especifique como quer a resposta (lista, tabela, narrativa, etc.)</li>
-            <li><strong>Estilo:</strong> Defina o tom (formal, casual, técnico, criativo, etc.)</li>
+            <li><strong>{t('prompt.tip_personality')}</strong> {t('prompt.tip_personality_desc')}</li>
+            <li><strong>{t('prompt.tip_instructions')}</strong> {t('prompt.tip_instructions_desc')}</li>
+            <li><strong>{t('prompt.tip_format')}</strong> {t('prompt.tip_format_desc')}</li>
+            <li><strong>{t('prompt.tip_style')}</strong> {t('prompt.tip_style_desc')}</li>
           </ul>
         </div>
 
         {/* Formulário */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="prompt" className="text-sm font-medium">
-              Prompt Completo (Personalidade + Instruções):
+              {t('prompt.label')}
             </label>
             <Textarea
               id="prompt"
-              placeholder="Defina a personalidade da IA e as instruções específicas sobre como processar o conteúdo..."
+              placeholder={defaultPrompt}
               className="min-h-[400px] w-full resize-y break-words whitespace-pre-wrap overflow-auto"
               {...register('prompt')}
             />
@@ -108,29 +135,30 @@ export function PromptForm({ onSubmit, isLoading = false, showSubmitButton = tru
             )}
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>
-                {currentPrompt?.length || 0} caracteres
+                {t('prompt.characters', { count: currentPrompt?.length || 0 })}
               </span>
               <span>
-                Mínimo: 20 caracteres
+                {t('prompt.minimum')}
               </span>
             </div>
+
           </div>
 
           {showSubmitButton && (
             <Button
               type="submit"
               className="w-full gap-2"
-              disabled={!isValid || isLoading}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  Processando...
+                  {t('prompt.processing')}
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Configurar Prompt
+                  {t('prompt.configure')}
                 </>
               )}
             </Button>

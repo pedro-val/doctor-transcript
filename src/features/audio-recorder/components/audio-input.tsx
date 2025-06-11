@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AudioRecorder } from './audio-recorder'
 import { AudioUploader } from './audio-uploader'
 import { AudioInputState } from '@/entities'
+import { useTranslations } from '@/shared/hooks/use-translations'
 
 interface AudioInputProps {
   onAudioReady: (audio: Blob | File) => void
@@ -16,6 +17,7 @@ interface AudioInputProps {
 }
 
 export function AudioInput({ onAudioReady, onAudioRemove, className }: AudioInputProps) {
+  const { t } = useTranslations()
   const [state, setState] = useState<AudioInputState>({
     recordedAudio: null,
     uploadedFile: null,
@@ -82,9 +84,9 @@ export function AudioInput({ onAudioReady, onAudioRemove, className }: AudioInpu
   return (
     <Card className={className}>
       <CardHeader className="text-center">
-        <CardTitle>Fonte do Áudio</CardTitle>
+        <CardTitle>{t('audio.title')}</CardTitle>
         <CardDescription>
-          Grave um novo áudio ou envie um arquivo do seu computador
+          {t('audio.description')}
         </CardDescription>
       </CardHeader>
       
@@ -97,7 +99,7 @@ export function AudioInput({ onAudioReady, onAudioRemove, className }: AudioInpu
             onClick={() => setActiveTab('record')}
           >
             <Mic className="h-4 w-4" />
-            Gravar
+            {t('audio.record')}
           </Button>
           <Button
             variant={activeTab === 'upload' ? 'default' : 'ghost'}
@@ -105,7 +107,7 @@ export function AudioInput({ onAudioReady, onAudioRemove, className }: AudioInpu
             onClick={() => setActiveTab('upload')}
           >
             <Upload className="h-4 w-4" />
-            Upload
+            {t('audio.upload')}
           </Button>
         </div>
 
@@ -117,8 +119,8 @@ export function AudioInput({ onAudioReady, onAudioRemove, className }: AudioInpu
                 <div className="bg-green-500 w-2 h-2 rounded-full"></div>
                 <span className="text-sm font-medium text-green-700 dark:text-green-300">
                   {state.activeSource === 'record' 
-                    ? 'Áudio gravado pronto' 
-                    : `Arquivo: ${state.uploadedFile?.name}`
+                    ? t('audio.recorded_ready')
+                    : t('audio.file_name', { name: state.uploadedFile?.name || '' })
                   }
                 </span>
               </div>
@@ -128,7 +130,7 @@ export function AudioInput({ onAudioReady, onAudioRemove, className }: AudioInpu
                 onClick={state.activeSource === 'record' ? handleRecordingClear : handleFileRemove}
                 className="text-green-700 dark:text-green-300 hover:text-red-600"
               >
-                Remover
+                {t('audio.remove')}
               </Button>
             </div>
           </div>
@@ -160,8 +162,7 @@ export function AudioInput({ onAudioReady, onAudioRemove, className }: AudioInpu
           <Alert variant="info">
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Nota:</strong> Você pode {activeTab === 'record' ? 'gravar' : 'enviar'} o áudio e 
-              definir o prompt simultaneamente. Use o botão "Processar" quando estiver tudo pronto.
+              <strong>{t('audio.note')}</strong> {t('audio.note_description', { action: activeTab === 'record' ? t('audio.record').toLowerCase() : t('audio.upload').toLowerCase() })}
             </AlertDescription>
           </Alert>
 
@@ -169,9 +170,7 @@ export function AudioInput({ onAudioReady, onAudioRemove, className }: AudioInpu
             <Alert variant="warning">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <strong>Arquivos Grandes:</strong> Arquivos maiores que 25MB serão automaticamente 
-                divididos em segmentos menores para transcrição. O processo pode levar mais tempo, 
-                mas garante 100% de compatibilidade com a OpenAI API.
+                <strong>{t('audio.large_files')}</strong> {t('audio.large_files_description')}
               </AlertDescription>
             </Alert>
           )}

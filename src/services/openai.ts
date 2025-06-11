@@ -1,110 +1,60 @@
-import { TranscriptionResult, GeneratedReport, ReportRequest } from '@/entities'
+import { TranscriptionResult, GeneratedReport, ReportRequest, ProcessingProgress } from '@/entities'
+import { PROCESSING_CONSTANTS } from '@/shared/config/processing'
+import { AudioProcessor } from './audio-processor'
+import { ProgressManager } from './progress-manager'
 
-export interface ProcessingProgress {
-  stage: 'transcribing' | 'generating'
-  step: 'analyzing' | 'splitting' | 'processing' | 'merging'
-  current: number
-  total: number
-  message: string
-}
-
-// Removida a chave hardcoded - agora usa variável de ambiente
+// Configuração das variáveis de ambiente
+// Use OPENAI_API_KEY no .env.local (sem NEXT_PUBLIC para maior segurança)
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
 const OPENAI_API_URL = 'https://api.openai.com/v1'
-const MAX_FILE_SIZE_MB = 24 // Um pouco abaixo de 25MB para margem de segurança
+const { MAX_FILE_SIZE_MB, TRANSCRIPTION_CHUNK_SIZE, CHUNK_PROCESSING_DELAY, RATE_LIMIT_DELAY } = PROCESSING_CONSTANTS
 
 export class OpenAIService {
   private apiKey: string
   private baseUrl: string
+  private audioProcessor: AudioProcessor
 
-  constructor(apiKey: string = OPENAI_API_KEY, baseUrl: string = OPENAI_API_URL) {
-    this.apiKey = apiKey
+  constructor(apiKey?: string, baseUrl: string = OPENAI_API_URL) {
+    // Se uma API key for fornecida explicitamente, use ela. Caso contrário, use a do ambiente
+    this.apiKey = apiKey || OPENAI_API_KEY
     this.baseUrl = baseUrl
+    this.audioProcessor = new AudioProcessor()
     
-    // Remover o console.log que expõe a chave da API
-    // console.log(OPENAI_API_KEY);
     if (!this.apiKey) {
-      throw new Error('OPENAI_API_KEY não foi configurada. Verifique seu arquivo .env.local')
+      throw new Error('OPENAI_API_KEY não foi configurada. Verifique seu arquivo .env.local com OPENAI_API_KEY=sua_chave_aqui')
     }
   }
 
 
-
-  // Divide áudio em chunks
-  private async splitAudio(audioBlob: Blob, chunkSizeMB: number = MAX_FILE_SIZE_MB): Promise<Blob[]> {
-    console.log(`[OpenAI Service] Dividindo arquivo de ${(audioBlob.size / (1024 * 1024)).toFixed(2)}MB em chunks de ${chunkSizeMB}MB`)
-    
-    const chunks: Blob[] = []
-    const chunkSizeBytes = chunkSizeMB * 1024 * 1024
-    
-    if (audioBlob.size <= chunkSizeBytes) {
-      console.log(`[OpenAI Service] Arquivo já está dentro do limite, retornando como chunk único`)
-      return [audioBlob]
-    }
-
-    // Para arquivos muito grandes, divide em chunks de tamanho fixo
-    // Nota: Esta é uma divisão simples por bytes. Para melhor qualidade,
-    // seria ideal dividir por tempo de áudio, mas isso requer bibliotecas adicionais
-    let start = 0
-    let chunkIndex = 1
-    while (start < audioBlob.size) {
-      const end = Math.min(start + chunkSizeBytes, audioBlob.size)
-      const chunk = audioBlob.slice(start, end)
-      const chunkSizeMB = chunk.size / (1024 * 1024)
-      console.log(`[OpenAI Service] Criando chunk ${chunkIndex}: ${chunkSizeMB.toFixed(2)}MB (bytes ${start}-${end})`)
-      chunks.push(chunk)
-      start = end
-      chunkIndex++
-    }
-
-    console.log(`[OpenAI Service] Divisão concluída: ${chunks.length} chunks criados`)
-    return chunks
-  }
 
     // Função principal de transcrição com tratamento de arquivos grandes
   async transcribeAudio(audio: Blob | File, onProgress?: (progress: ProcessingProgress) => void): Promise<TranscriptionResult> {
     const audioBlob = audio instanceof File ? audio : audio
-    const fileSizeMB = audioBlob.size / (1024 * 1024)
+    const fileSizeMB = this.audioProcessor.getFileSizeMB(audioBlob)
+    const progressManager = new ProgressManager(onProgress)
 
-    console.log(`[OpenAI Service] Iniciando transcrição de arquivo de áudio: ${fileSizeMB.toFixed(2)}MB`)
-    console.log(`[OpenAI Service] Tipo do arquivo: ${audioBlob.type || 'unknown'}`)
-    console.log(`[OpenAI Service] Limite configurado: ${MAX_FILE_SIZE_MB}MB`)
+    // Valida o arquivo de áudio
+    const validation = this.audioProcessor.validateAudioFile(audioBlob)
+    if (!validation.isValid) {
+      throw new Error(`Arquivo de áudio inválido: ${validation.error}`)
+    }
 
     // Informa que está analisando o arquivo
-    onProgress?.({
-      stage: 'transcribing',
-      step: 'analyzing',
-      current: 0,
-      total: 1,
-      message: `Analisando arquivo de áudio (${fileSizeMB.toFixed(1)}MB)...`
-    })
+    progressManager.reportAnalyzing(fileSizeMB)
 
     // Se o arquivo está dentro do limite, processa normalmente
-    if (fileSizeMB <= MAX_FILE_SIZE_MB) {
-      console.log(`[OpenAI Service] Arquivo dentro do limite (${fileSizeMB.toFixed(2)}MB). Processando normalmente...`)
-      
-      onProgress?.({
-        stage: 'transcribing',
-        step: 'processing',
-        current: 1,
-        total: 1,
-        message: 'Transcrevendo áudio...'
-      })
-      
+    if (this.audioProcessor.isWithinSizeLimit(audioBlob)) {
+      progressManager.reportProcessing('transcribing', 1, 1)
       return this.transcribeSingleFile(audioBlob)
     }
 
     // Para arquivos maiores que 25MB, vai direto para divisão em chunks
-    console.log(`[OpenAI Service] Arquivo maior que ${MAX_FILE_SIZE_MB}MB detectado (${fileSizeMB.toFixed(2)}MB). Dividindo em chunks para evitar erros da OpenAI...`)
-    return this.transcribeInChunks(audioBlob, onProgress)
+    return this.transcribeInChunks(audioBlob, progressManager)
   }
 
   // Transcreve um único arquivo
   private async transcribeSingleFile(audio: Blob): Promise<TranscriptionResult> {
-    const formData = new FormData()
-    formData.append('file', audio, 'audio.wav')
-    formData.append('model', 'whisper-1')
-    formData.append('response_format', 'json')
+    const formData = this.audioProcessor.prepareFormData(audio)
 
     const response = await fetch(`${this.baseUrl}/audio/transcriptions`, {
       method: 'POST',
@@ -130,40 +80,18 @@ export class OpenAIService {
   }
 
   // Transcreve arquivo dividido em chunks
-  private async transcribeInChunks(audio: Blob, onProgress?: (progress: ProcessingProgress) => void): Promise<TranscriptionResult> {
-    console.log('[OpenAI Service] Dividindo áudio em segmentos...')
-    
+  private async transcribeInChunks(audio: Blob, progressManager: ProgressManager): Promise<TranscriptionResult> {
     // Informa que está dividindo
-    onProgress?.({
-      stage: 'transcribing',
-      step: 'splitting',
-      current: 0,
-      total: 1,
-      message: 'Dividindo arquivo em segmentos...'
-    })
+    progressManager.reportSplitting()
     
-    const chunks = await this.splitAudio(audio)
-    console.log(`[OpenAI Service] Arquivo dividido em ${chunks.length} segmentos`)
-    
-    chunks.forEach((chunk, index) => {
-      const chunkSizeMB = chunk.size / (1024 * 1024)
-      console.log(`[OpenAI Service] Segmento ${index + 1}: ${chunkSizeMB.toFixed(2)}MB`)
-    })
+    const chunks = await this.audioProcessor.splitAudio(audio)
 
     const transcriptions: string[] = []
     let totalConfidence = 0
 
     for (let i = 0; i < chunks.length; i++) {
-      console.log(`Transcrevendo segmento ${i + 1}/${chunks.length}...`)
-      
       // Atualiza progresso
-      onProgress?.({
-        stage: 'transcribing',
-        step: 'processing',
-        current: i + 1,
-        total: chunks.length,
-        message: `Transcrevendo segmento ${i + 1} de ${chunks.length}...`
-      })
+      progressManager.reportProcessing('transcribing', i + 1, chunks.length, `Transcrevendo segmento ${i + 1} de ${chunks.length}...`)
       
       try {
         const chunkResult = await this.transcribeSingleFile(chunks[i])
@@ -172,22 +100,15 @@ export class OpenAIService {
 
         // Pequena pausa entre requests para evitar rate limiting
         if (i < chunks.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          await new Promise(resolve => setTimeout(resolve, CHUNK_PROCESSING_DELAY))
         }
       } catch (error) {
-        console.error(`Erro no segmento ${i + 1}:`, error)
         transcriptions.push(`[Erro na transcrição do segmento ${i + 1}]`)
       }
     }
 
     // Informa que está juntando os resultados
-    onProgress?.({
-      stage: 'transcribing',
-      step: 'merging',
-      current: chunks.length,
-      total: chunks.length,
-      message: 'Unindo transcrições dos segmentos...'
-    })
+    progressManager.reportMerging('transcribing', chunks.length)
 
     // Junta todas as transcrições
     const fullTranscription = transcriptions.join(' ').trim()
@@ -204,14 +125,9 @@ export class OpenAIService {
 
   async generateReport(request: ReportRequest, onProgress?: (progress: ProcessingProgress) => void): Promise<GeneratedReport> {
     const transcriptionLength = request.transcription.length
-    console.log(`[OpenAI Service] Iniciando geração de relatório com GPT-4o para transcrição de ${transcriptionLength} caracteres`)
-
-    const totalPromptLength = request.prompt.length + transcriptionLength
-    console.log(`[OpenAI Service] Tamanho total do prompt: ${totalPromptLength} caracteres`)
 
     // Se a transcrição for muito longa, processamos em chunks
-    if (transcriptionLength > 8000) {
-      console.log(`[OpenAI Service] Transcrição muito longa, processando em chunks...`)
+    if (transcriptionLength > TRANSCRIPTION_CHUNK_SIZE) {
       return this.generateReportInChunks(request, onProgress)
     }
 
@@ -253,17 +169,14 @@ export class OpenAIService {
         }),
       })
 
-      console.log(`[OpenAI Service] Status da resposta da API: ${response.status} ${response.statusText}`)
-
       if (!response.ok) {
         // Tenta capturar mais detalhes do erro
         let errorDetails = response.statusText
         try {
           const errorData = await response.json()
           errorDetails = errorData.error?.message || errorData.message || response.statusText
-          console.error(`[OpenAI Service] Detalhes do erro da API:`, errorData)
         } catch (e) {
-          console.error(`[OpenAI Service] Não foi possível ler detalhes do erro`)
+          // Não foi possível ler detalhes do erro
         }
         
         throw new Error(`Erro na geração do relatório: ${errorDetails}`)
@@ -275,22 +188,19 @@ export class OpenAIService {
         id: crypto.randomUUID(),
         content: data.choices[0].message.content,
         prompt: request.prompt,
-        systemPrompt: request.prompt, // Agora o prompt é unificado
+        systemPrompt: request.systemPrompt,
         transcriptionId: crypto.randomUUID(),
         timestamp: new Date(),
         tokens: data.usage?.total_tokens,
       }
     } catch (fetchError) {
-      console.error(`[OpenAI Service] Erro de rede ou fetch:`, fetchError)
       throw fetchError
     }
   }
 
   // Gera relatório dividindo transcrições longas em chunks
   private async generateReportInChunks(request: ReportRequest, onProgress?: (progress: ProcessingProgress) => void): Promise<GeneratedReport> {
-    console.log(`[OpenAI Service] Dividindo transcrição longa em chunks para geração de relatório com GPT-4o...`)
-    
-    const chunkSize = 6000 // Tamanho seguro para deixar espaço para o prompt
+    const chunkSize = TRANSCRIPTION_CHUNK_SIZE // Tamanho seguro para deixar espaço para o prompt
     const transcriptionChunks: string[] = []
     
     // Divide a transcrição em chunks
@@ -299,15 +209,11 @@ export class OpenAIService {
       transcriptionChunks.push(chunk)
     }
     
-    console.log(`[OpenAI Service] Transcrição dividida em ${transcriptionChunks.length} chunks`)
-    
     const reportParts: string[] = []
     let totalTokens = 0
 
     // Processa cada chunk
     for (let i = 0; i < transcriptionChunks.length; i++) {
-      console.log(`[OpenAI Service] Processando chunk ${i + 1}/${transcriptionChunks.length} do relatório...`)
-      
       // Atualiza progresso
       onProgress?.({
         stage: 'generating',
@@ -341,11 +247,9 @@ INSTRUÇÃO DE CONTINUIDADE: ${continuationInstruction}`
 
         // Pausa entre requests para evitar rate limiting
         if (i < transcriptionChunks.length - 1) {
-          console.log(`[OpenAI Service] Aguardando antes do próximo chunk...`)
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY))
         }
       } catch (error) {
-        console.error(`[OpenAI Service] Erro no chunk ${i + 1}:`, error)
         reportParts.push(`[Erro no processamento da parte ${i + 1}/${transcriptionChunks.length}]`)
       }
     }
@@ -361,13 +265,11 @@ INSTRUÇÃO DE CONTINUIDADE: ${continuationInstruction}`
     
     const finalContent = reportParts.join('\n\n---\n\n')
     
-    console.log(`[OpenAI Service] Relatório em chunks concluído. Total de tokens: ${totalTokens}`)
-
     return {
       id: crypto.randomUUID(),
       content: finalContent,
       prompt: request.prompt,
-      systemPrompt: request.prompt, // Agora o prompt é unificado
+      systemPrompt: request.systemPrompt,
       transcriptionId: crypto.randomUUID(),
       timestamp: new Date(),
       tokens: totalTokens,

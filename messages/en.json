@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "Medical AI Assistant",
+    "description": "Application for recording consultations, transcription and generation of medical reports using AI",
+    "keywords": "medical, AI, transcription, consultation, report",
+    "subtitle": "Transform your medical consultations into structured reports using artificial intelligence and automatic transcription"
+  },
+  "audio": {
+    "title": "Audio Source",
+    "description": "Record new audio or upload a file from your computer",
+    "record": "Record",
+    "upload": "Upload",
+    "ready": "ready",
+    "pending": "pending",
+    "recorded_ready": "Recorded audio ready",
+    "file_name": "File: {name}",
+    "remove": "Remove",
+    "note": "Note:",
+    "note_description": "You can {action} the audio and set the prompt simultaneously. Use the \"Process\" button when everything is ready.",
+    "large_files": "Large Files:",
+    "large_files_description": "Files larger than 25MB will be automatically split into smaller segments for transcription. The process may take longer, but ensures 100% compatibility with the OpenAI API."
+  },
+  "recorder": {
+    "title": "Audio Recorder",
+    "description": "Record your audio (no time limit)",
+    "ready": "✓ Audio ready",
+    "recording": "Recording in progress...",
+    "start_recording": "Start Recording",
+    "stop_recording": "Stop Recording",
+    "play": "Play",
+    "pause": "Pause",
+    "clear": "Clear"
+  },
+  "uploader": {
+    "title": "Audio Upload",
+    "description": "Upload an audio file from your computer (any size)",
+    "drag_drop": "Click here or drag an audio file",
+    "supported_formats": "Supported formats: MP3, WAV, WebM, OGG, M4A, AAC",
+    "tip": "Tip:",
+    "tip_description": "For best results, use audio files with good quality and little background noise. Transcription works better with clear speech.",
+    "unsupported_format": "Unsupported file format. Use MP3, WAV, WebM, OGG, M4A or AAC."
+  },
+  "prompt": {
+    "title": "Instructions",
+    "description": "Configure how the AI should analyze and process the audio content",
+    "tips_title": "💡 Tips for better results:",
+    "tip_personality": "Personality:",
+    "tip_personality_desc": "Define who the AI is (assistant, specialist, analyst, etc.)",
+    "tip_instructions": "Instructions:",
+    "tip_instructions_desc": "Be specific about what you want to be done",
+    "tip_format": "Format:",
+    "tip_format_desc": "Specify how you want the response (list, table, narrative, etc.)",
+    "tip_style": "Style:",
+    "tip_style_desc": "Define the tone (formal, casual, technical, creative, etc.)",
+    "label": "Complete Prompt (Personality + Instructions):",
+    "placeholder": "Leave empty to use the default prompt or write your own instructions...",
+    "min_chars": "The prompt must have at least 20 characters to be effective",
+    "characters": "{count} characters",
+    "minimum": "Minimum: 20 characters",
+    "configure": "Configure Prompt",
+    "processing": "Processing...",
+    "default": "You are an intelligent assistant. Analyze the provided content and respond according to the specific instructions you receive.\n\nStay true to the original content and follow exactly the guidelines that are given."
+  },
+  "processing": {
+    "audio_ready": "Audio {status}",
+    "prompt_ready": "Prompt {status}",
+    "configured": "configured",
+    "process_ai": "Process with AI",
+    "all_ready": "All ready!",
+    "config_audio_prompt": "Configure audio and prompt to continue",
+    "record_upload_audio": "Record or upload audio to continue",
+    "configure_prompt": "Configure prompt to continue",
+    "please_provide": "Please provide audio and configure the prompt before processing.",
+    "error_during": "Error during processing: {error}",
+    "processing_audio": "Processing your audio...",
+    "transcribing": "Transcribing audio...",
+    "generating_report": "Generating report...",
+    "completed": "Processing completed!",
+    "analyzing": "Analyzing audio...",
+    "splitting": "Splitting file...",
+    "merging": "Merging results...",
+    "chunk_progress": "Processing segment {current} of {total}",
+    "transcription_progress": "Transcription: {progress}%",
+    "report_progress": "Report: {progress}%"
+  },
+  "report": {
+    "title": "Generated Report",
+    "transcription_title": "Audio Transcription",
+    "view_transcription": "View Transcription",
+    "hide_transcription": "Hide Transcription",
+    "copy_report": "Copy Report",
+    "download_report": "Download Report",
+    "start_over": "Start Over",
+    "processing_time": "Processing time: {time}",
+    "copied_success": "Report copied to clipboard!",
+    "download_filename": "medical-report-{timestamp}.txt"
+  },
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light mode",
+    "dark": "Dark mode"
+  },
+  "language": {
+    "toggle": "Toggle language",
+    "portuguese": "Português",
+    "english": "English"
+  },
+  "common": {
+    "error": "Error",
+    "success": "Success",
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "save": "Save",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "retry": "Retry"
+  }
+} 

@@ -5,7 +5,8 @@ import { Mic, MicOff, Play, Pause, Square, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAudioRecorder } from '@/shared/hooks/use-audio-recorder'
-import { cn } from '@/lib/utils'
+import { useTranslations } from '@/shared/hooks/use-translations'
+import { cn } from '@/shared/lib/utils'
 
 interface AudioRecorderProps {
   onRecordingComplete?: (audioBlob: Blob) => void
@@ -13,6 +14,7 @@ interface AudioRecorderProps {
 }
 
 export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderProps) {
+  const { t } = useTranslations()
   const {
     isRecording,
     duration,
@@ -55,7 +57,7 @@ export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderP
     try {
       await startRecording()
     } catch (error) {
-      console.error('Erro ao iniciar gravação:', error)
+      // Error handling is managed by the hook
     }
   }
 
@@ -81,10 +83,10 @@ export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderP
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center gap-2">
           <Mic className="h-5 w-5" />
-          Gravador de Áudio
+          {t('recorder.title')}
         </CardTitle>
         <CardDescription>
-          Grave seu áudio (sem limite de tempo)
+          {t('recorder.description')}
         </CardDescription>
       </CardHeader>
       
@@ -115,7 +117,7 @@ export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderP
           </div>
           {audioBlob && !isRecording && (
             <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
-              ✓ Áudio pronto
+              {t('recorder.ready')}
             </p>
           )}
         </div>
@@ -127,7 +129,7 @@ export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderP
           </div>
           {isRecording && (
             <div className="text-sm text-muted-foreground">
-              Gravação em andamento...
+              {t('recorder.recording')}
             </div>
           )}
         </div>
@@ -141,7 +143,7 @@ export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderP
               className="gap-2"
             >
               <Mic className="h-4 w-4" />
-              Iniciar Gravação
+              {t('recorder.start_recording')}
             </Button>
           )}
 
@@ -153,7 +155,7 @@ export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderP
               className="gap-2"
             >
               <Square className="h-4 w-4" />
-              Parar Gravação
+              {t('recorder.stop_recording')}
             </Button>
           )}
 
@@ -168,12 +170,12 @@ export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderP
                 {audioElement && !audioElement.paused ? (
                   <>
                     <Pause className="h-4 w-4" />
-                    Pausar
+                    {t('recorder.pause')}
                   </>
                 ) : (
                   <>
                     <Play className="h-4 w-4" />
-                    Reproduzir
+                    {t('recorder.play')}
                   </>
                 )}
               </Button>
@@ -185,16 +187,18 @@ export function AudioRecorder({ onRecordingComplete, className }: AudioRecorderP
                 className="gap-2"
               >
                 <Trash2 className="h-4 w-4" />
-                Limpar
+                {t('recorder.clear')}
               </Button>
             </>
           )}
         </div>
 
-        {/* Progress bar - removido pois não há limite de tempo */}
-        {isRecording && (
-          <div className="w-full bg-muted rounded-full h-2">
-            <div className="h-2 rounded-full bg-primary animate-pulse" />
+        {/* Dicas de uso */}
+        {!isRecording && !audioBlob && (
+          <div className="bg-muted/50 p-3 rounded-md">
+            <p className="text-sm text-muted-foreground text-center">
+              {t('uploader.tip_description')}
+            </p>
           </div>
         )}
       </CardContent>

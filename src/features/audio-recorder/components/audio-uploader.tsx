@@ -1,10 +1,11 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Upload, File, X, CheckCircle } from 'lucide-react'
+import { Upload, X, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatFileSize } from '@/shared/lib/utils'
+import { useTranslations } from '@/shared/hooks/use-translations'
 
 interface AudioUploaderProps {
   onFileSelect: (file: File) => void
@@ -24,13 +25,14 @@ const ACCEPTED_AUDIO_TYPES = [
 ]
 
 export function AudioUploader({ onFileSelect, onFileRemove, selectedFile, className }: AudioUploaderProps) {
+  const { t } = useTranslations()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const validateFile = (file: File): string | null => {
     if (!ACCEPTED_AUDIO_TYPES.includes(file.type)) {
-      return 'Formato de arquivo não suportado. Use MP3, WAV, WebM, OGG, M4A ou AAC.'
+      return t('uploader.unsupported_format')
     }
     
     // Removemos a validação de tamanho - deixamos o serviço OpenAI lidar com arquivos grandes
@@ -96,10 +98,10 @@ export function AudioUploader({ onFileSelect, onFileRemove, selectedFile, classN
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center gap-2">
           <Upload className="h-5 w-5" />
-          Upload de Áudio
+          {t('uploader.title')}
         </CardTitle>
         <CardDescription>
-          Envie um arquivo de áudio do seu computador (qualquer tamanho)
+          {t('uploader.description')}
         </CardDescription>
       </CardHeader>
       
@@ -128,10 +130,10 @@ export function AudioUploader({ onFileSelect, onFileRemove, selectedFile, classN
             <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <div className="space-y-2">
               <p className="text-sm font-medium">
-                Clique aqui ou arraste um arquivo de áudio
+                {t('uploader.drag_drop')}
               </p>
               <p className="text-xs text-muted-foreground">
-                Formatos suportados: MP3, WAV, WebM, OGG, M4A, AAC
+                {t('uploader.supported_formats')}
               </p>
             </div>
           </div>
@@ -171,8 +173,7 @@ export function AudioUploader({ onFileSelect, onFileRemove, selectedFile, classN
 
         <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md">
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            <strong>Dica:</strong> Para melhores resultados, use arquivos de áudio com boa qualidade 
-            e pouco ruído de fundo. A transcrição funciona melhor com fala clara.
+            <strong>{t('uploader.tip')}</strong> {t('uploader.tip_description')}
           </p>
         </div>
       </CardContent>

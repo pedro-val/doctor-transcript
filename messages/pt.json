@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "Assistente Médico com IA",
+    "description": "Aplicação para gravação de consultas, transcrição e geração de relatórios médicos usando IA",
+    "keywords": "médico, IA, transcrição, consulta, relatório",
+    "subtitle": "Transforme suas consultas médicas em relatórios estruturados usando inteligência artificial e transcrição automática"
+  },
+  "audio": {
+    "title": "Fonte do Áudio",
+    "description": "Grave um novo áudio ou envie um arquivo do seu computador",
+    "record": "Gravar",
+    "upload": "Upload",
+    "ready": "pronto",
+    "pending": "pendente",
+    "recorded_ready": "Áudio gravado pronto",
+    "file_name": "Arquivo: {name}",
+    "remove": "Remover",
+    "note": "Nota:",
+    "note_description": "Você pode {action} o áudio e definir o prompt simultaneamente. Use o botão \"Processar\" quando estiver tudo pronto.",
+    "large_files": "Arquivos Grandes:",
+    "large_files_description": "Arquivos maiores que 25MB serão automaticamente divididos em segmentos menores para transcrição. O processo pode levar mais tempo, mas garante 100% de compatibilidade com a OpenAI API."
+  },
+  "recorder": {
+    "title": "Gravador de Áudio",
+    "description": "Grave seu áudio (sem limite de tempo)",
+    "ready": "✓ Áudio pronto",
+    "recording": "Gravação em andamento...",
+    "start_recording": "Iniciar Gravação",
+    "stop_recording": "Parar Gravação",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "clear": "Limpar"
+  },
+  "uploader": {
+    "title": "Upload de Áudio",
+    "description": "Envie um arquivo de áudio do seu computador (qualquer tamanho)",
+    "drag_drop": "Clique aqui ou arraste um arquivo de áudio",
+    "supported_formats": "Formatos suportados: MP3, WAV, WebM, OGG, M4A, AAC",
+    "tip": "Dica:",
+    "tip_description": "Para melhores resultados, use arquivos de áudio com boa qualidade e pouco ruído de fundo. A transcrição funciona melhor com fala clara.",
+    "unsupported_format": "Formato de arquivo não suportado. Use MP3, WAV, WebM, OGG, M4A ou AAC."
+  },
+  "prompt": {
+    "title": "Instruções",
+    "description": "Configure como a IA deve analisar e processar o conteúdo do áudio",
+    "tips_title": "💡 Dicas para melhores resultados:",
+    "tip_personality": "Personalidade:",
+    "tip_personality_desc": "Defina quem é a IA (assistente, especialista, analista, etc.)",
+    "tip_instructions": "Instruções:",
+    "tip_instructions_desc": "Seja específico sobre o que você quer que seja feito",
+    "tip_format": "Formato:",
+    "tip_format_desc": "Especifique como quer a resposta (lista, tabela, narrativa, etc.)",
+    "tip_style": "Estilo:",
+    "tip_style_desc": "Defina o tom (formal, casual, técnico, criativo, etc.)",
+    "label": "Prompt Completo (Personalidade + Instruções):",
+    "placeholder": "Deixe vazio para usar o prompt padrão ou escreva suas próprias instruções...",
+    "min_chars": "O prompt deve ter pelo menos 20 caracteres para ser efetivo",
+    "characters": "{count} caracteres",
+    "minimum": "Mínimo: 20 caracteres",
+    "configure": "Configurar Prompt",
+    "processing": "Processando...",
+    "default": "Você é um assistente inteligente. Analise o conteúdo fornecido e responda de acordo com as instruções específicas que você receber.\n\nMantenha-se fiel ao conteúdo original e siga exatamente as diretrizes que forem dadas."
+  },
+  "processing": {
+    "audio_ready": "Áudio {status}",
+    "prompt_ready": "Prompt {status}",
+    "configured": "configurado",
+    "process_ai": "Processar com IA",
+    "all_ready": "Tudo pronto!",
+    "config_audio_prompt": "Configure o áudio e o prompt para continuar",
+    "record_upload_audio": "Grave ou envie um áudio para continuar",
+    "configure_prompt": "Configure o prompt para continuar",
+    "please_provide": "Por favor, forneça um áudio e configure o prompt antes de processar.",
+    "error_during": "Erro durante o processamento: {error}",
+    "processing_audio": "Processando seu áudio...",
+    "transcribing": "Transcrevendo áudio...",
+    "generating_report": "Gerando relatório...",
+    "completed": "Processamento concluído!",
+    "analyzing": "Analisando áudio...",
+    "splitting": "Dividindo arquivo...",
+    "merging": "Unindo resultados...",
+    "chunk_progress": "Processando segmento {current} de {total}",
+    "transcription_progress": "Transcrição: {progress}%",
+    "report_progress": "Relatório: {progress}%"
+  },
+  "report": {
+    "title": "Relatório Gerado",
+    "transcription_title": "Transcrição do Áudio",
+    "view_transcription": "Ver Transcrição",
+    "hide_transcription": "Ocultar Transcrição",
+    "copy_report": "Copiar Relatório",
+    "download_report": "Baixar Relatório",
+    "start_over": "Começar Novamente",
+    "processing_time": "Tempo de processamento: {time}",
+    "copied_success": "Relatório copiado para a área de transferência!",
+    "download_filename": "relatorio-medical-{timestamp}.txt"
+  },
+  "theme": {
+    "toggle": "Alternar tema",
+    "light": "Modo claro",
+    "dark": "Modo escuro"
+  },
+  "language": {
+    "toggle": "Alternar idioma",
+    "portuguese": "Português",
+    "english": "English"
+  },
+  "common": {
+    "error": "Erro",
+    "success": "Sucesso",
+    "loading": "Carregando...",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "close": "Fechar",
+    "save": "Salvar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "retry": "Tentar novamente"
+  }
+} 

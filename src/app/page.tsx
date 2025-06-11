@@ -6,117 +6,119 @@ import { AudioInput } from '@/features/audio-recorder/components/audio-input'
 import { PromptForm } from '@/features/prompt-form/components/prompt-form'
 import { ReportViewer } from '@/features/report-viewer/components/report-viewer'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { LanguageToggle } from '@/components/language-toggle'
+import { useTranslations } from '@/shared/hooks/use-translations'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { getOpenAIService, ProcessingProgress } from '@/services/openai'
-import { TranscriptionResult, GeneratedReport, ReportFormData } from '@/entities'
-import { ProcessingStatus } from '@/components/ui/processing-status'
+import { TranscriptionResult, GeneratedReport, ReportFormData, ReportRequest, ProcessingProgress } from '@/entities'
+import { apiClient } from '@/services/api-client'
 
-type AppStep = 'input' | 'processing' | 'report'
+type ProcessingStep = 'idle' | 'transcribing' | 'generating' | 'completed' | 'error'
 
 export default function Home() {
-  const [currentStep, setCurrentStep] = useState<AppStep>('input')
+  const { t } = useTranslations()
   const [audioSource, setAudioSource] = useState<Blob | File | null>(null)
   const [promptData, setPromptData] = useState<ReportFormData | null>(null)
   const [transcription, setTranscription] = useState<TranscriptionResult | null>(null)
   const [report, setReport] = useState<GeneratedReport | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [currentStep, setCurrentStep] = useState<ProcessingStep>('idle')
+  const [progress, setProgress] = useState<ProcessingProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [processingProgress, setProcessingProgress] = useState<ProcessingProgress | null>(null)
 
-  const handleAudioReady = (audio: Blob | File) => {
+  const resetState = useCallback(() => {
+    setTranscription(null)
+    setReport(null)
+    setError(null)
+    setProgress(null)
+    setCurrentStep('idle')
+  }, [])
+
+  const handleAudioCapture = useCallback((audio: Blob | File) => {
     setAudioSource(audio)
-    setError(null)
-  }
+    resetState()
+  }, [resetState])
 
-  const handleAudioRemove = () => {
-    setAudioSource(null)
-    setError(null)
-  }
-
-  const handlePromptChange = useCallback((data: ReportFormData) => {
+  const handlePromptSubmit = useCallback((data: ReportFormData) => {
     setPromptData(data)
   }, [])
 
-  const handleProcess = async () => {
-    if (!audioSource || !promptData) {
-      setError('Por favor, forneça um áudio e configure o prompt antes de processar.')
+  const handleProcess = useCallback(async (prompt: string) => {
+    if (!audioSource) {
+      setError(t('errors.noAudio'))
       return
     }
 
-    setError(null)
-    setIsProcessing(true)
-    setCurrentStep('processing')
-    setProcessingProgress(null)
-  
     try {
-      const openAIService = getOpenAIService()
+      setError(null)
       
       // Etapa 1: Transcrição
-      const transcriptionResult = await openAIService.transcribeAudio(
-        audioSource, 
-        (progress) => setProcessingProgress(progress)
+      setCurrentStep('transcribing')
+      
+      const transcriptionResult = await apiClient.transcribeAudio(
+        audioSource,
+        setProgress
       )
+      
       setTranscription(transcriptionResult)
-  
-      // Etapa 2: Geração do relatório
-      const reportRequest = {
-        prompt: promptData.prompt,
-        systemPrompt: promptData.prompt,
+
+      // Etapa 2: Geração de relatório
+      setCurrentStep('generating')
+      setProgress(null) // Reset progress para mostrar loading fallback
+      
+      const reportRequest: ReportRequest = {
         transcription: transcriptionResult.text,
+        prompt: prompt,
+        systemPrompt: prompt,
         timestamp: new Date()
       }
       
-      const generatedReport = await openAIService.generateReport(
+      const reportResult = await apiClient.generateReport(
         reportRequest,
-        (progress) => setProcessingProgress(progress)
+        setProgress
       )
-      setReport(generatedReport)
-      setCurrentStep('report')
-    } catch (error) {
-      console.error('Processing error:', error)
-      setError(`Erro durante o processamento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
-      setCurrentStep('input')
-    } finally {
-      setIsProcessing(false)
-      setProcessingProgress(null)
+      
+      setReport(reportResult)
+      setCurrentStep('completed')
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.unknown'))
+      setCurrentStep('error')
     }
-  }
+  }, [audioSource, t])
 
   const handleStartOver = () => {
-    setCurrentStep('input')
+    setCurrentStep('idle')
     setAudioSource(null)
     setPromptData(null)
     setTranscription(null)
     setReport(null)
     setError(null)
-    setIsProcessing(false)
-    setProcessingProgress(null)
+    setProgress(null)
   }
 
-  const canProcess = audioSource && promptData && !isProcessing
+  const canProcess = audioSource && promptData && promptData.prompt.length >= 20 && currentStep === 'idle'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <ThemeToggle />
+      <LanguageToggle />
       
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 pt-8 sm:pt-0">
           <div className="flex justify-center items-center gap-3 mb-4">
             <div className="bg-primary p-3 rounded-full">
               <Stethoscope className="h-8 w-8 text-primary-foreground" />
             </div>
-            <h1 className="text-4xl font-bold text-foreground">Doctor AI</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">{t('app.title')}</h1>
           </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transforme suas consultas médicas em relatórios estruturados usando 
-            inteligência artificial e transcrição automática
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
+            {t('app.subtitle')}
           </p>
         </div>
 
-        {/* Error Display */}
-        {error && (
+        {/* Error Display - só mostra se houve erro durante processamento */}
+        {error && currentStep === 'error' && (
           <Card className="mb-8 border-destructive">
             <CardContent className="p-4">
               <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-md">
@@ -127,20 +129,20 @@ export default function Home() {
         )}
 
         {/* Main Content */}
-        {currentStep === 'input' && (
+        {currentStep === 'idle' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Audio Input */}
             <div className="space-y-6">
               <AudioInput 
-                onAudioReady={handleAudioReady}
-                onAudioRemove={handleAudioRemove}
+                onAudioReady={handleAudioCapture}
+                onAudioRemove={() => setAudioSource(null)}
               />
             </div>
 
             {/* Prompt Configuration */}
             <div className="space-y-6">
               <PromptForm 
-                onSubmit={handlePromptChange}
+                onSubmit={handlePromptSubmit}
                 isLoading={false}
                 showSubmitButton={false}
               />
@@ -154,36 +156,36 @@ export default function Home() {
                     <div className="flex justify-center items-center gap-4 text-sm text-muted-foreground">
                       <div className={`flex items-center gap-2 ${audioSource ? 'text-green-600' : ''}`}>
                         <div className={`w-2 h-2 rounded-full ${audioSource ? 'bg-green-500' : 'bg-muted-foreground'}`}></div>
-                        Áudio {audioSource ? 'pronto' : 'pendente'}
+                        {t('processing.audio_ready', { status: audioSource ? t('audio.ready') : t('audio.pending') })}
                       </div>
-                      <div className={`flex items-center gap-2 ${promptData ? 'text-green-600' : ''}`}>
-                        <div className={`w-2 h-2 rounded-full ${promptData ? 'bg-green-500' : 'bg-muted-foreground'}`}></div>
-                        Prompt {promptData ? 'configurado' : 'pendente'}
+                      <div className={`flex items-center gap-2 ${promptData && promptData.prompt.length >= 20 ? 'text-green-600' : ''}`}>
+                        <div className={`w-2 h-2 rounded-full ${promptData && promptData.prompt.length >= 20 ? 'bg-green-500' : 'bg-muted-foreground'}`}></div>
+                        {t('processing.prompt_ready', { status: promptData && promptData.prompt.length >= 20 ? t('processing.configured') : t('audio.pending') })}
                       </div>
                     </div>
 
                     <Button
-                      onClick={handleProcess}
+                      onClick={() => handleProcess(promptData?.prompt || t('processing.default_prompt'))}
                       disabled={!canProcess}
                       size="lg"
                       className="gap-2"
                     >
                       <Send className="h-5 w-5" />
-                      Processar com IA
-                      {audioSource && promptData && (
+                      {t('processing.process_ai')}
+                      {audioSource && promptData && promptData.prompt.length >= 20 && (
                         <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded">
-                          Tudo pronto!
+                          {t('processing.all_ready')}
                         </span>
                       )}
                     </Button>
 
-                    {!audioSource || !promptData ? (
+                    {!audioSource || !promptData || promptData.prompt.length < 20 ? (
                       <p className="text-sm text-muted-foreground">
-                        {!audioSource && !promptData 
-                          ? 'Configure o áudio e o prompt para continuar'
+                        {!audioSource && (!promptData || promptData.prompt.length < 20)
+                          ? t('processing.config_audio_prompt')
                           : !audioSource 
-                          ? 'Grave ou envie um áudio para continuar'
-                          : 'Configure o prompt para continuar'
+                          ? t('processing.record_upload_audio')
+                          : t('processing.configure_prompt')
                         }
                       </p>
                     ) : null}
@@ -194,27 +196,137 @@ export default function Home() {
           </div>
         )}
 
-        {/* Processing State */}
-        {currentStep === 'processing' && (
+        {/* Processing State - Transcrição */}
+        {currentStep === 'transcribing' && (
           <div className="max-w-3xl mx-auto space-y-6">
             <Card>
               <CardContent className="p-8">
                 <div className="text-center mb-6">
+                  <div className="flex justify-center items-center gap-3 mb-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                      <Mic className="w-6 h-6 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                  </div>
                   <h3 className="text-2xl font-semibold mb-2">
-                    Processando com IA
+                    🎤 Transcrevendo Áudio
                   </h3>
                   <p className="text-muted-foreground">
-                    Seu áudio está sendo processado. Acompanhe o progresso abaixo.
+                    Convertendo seu áudio em texto usando inteligência artificial
                   </p>
                 </div>
 
-                {/* Status de progresso detalhado */}
-                <ProcessingStatus progress={processingProgress} />
+                {/* Barra de progresso animada */}
+                {progress && (
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <p className="text-lg font-medium text-primary mb-2">{progress.message}</p>
+                      <div className="flex justify-center items-center gap-2 text-sm text-muted-foreground">
+                        <span>Etapa {progress.current} de {progress.total}</span>
+                        <span>•</span>
+                        <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+                      </div>
+                    </div>
+                    
+                    <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden" 
+                        style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                <div className="mt-6 text-center">
+                {/* Loading fallback sem progresso */}
+                {!progress && (
+                  <div className="space-y-4">
+                    <div className="flex justify-center">
+                      <div className="flex space-x-1">
+                        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                    <p className="text-center text-muted-foreground">Iniciando transcrição...</p>
+                  </div>
+                )}
+
+                <div className="mt-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    Este processo pode levar alguns minutos, dependendo do tamanho do arquivo.
-                    Mantenha esta janela aberta até a conclusão.
+                    ⏱️ Este processo pode levar alguns minutos, dependendo do tamanho do arquivo.
+                    <br />
+                    💡 Mantenha esta janela aberta até a conclusão.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Processing State - Geração de Relatório */}
+        {currentStep === 'generating' && (
+          <div className="max-w-3xl mx-auto space-y-6">
+            <Card>
+              <CardContent className="p-8">
+                <div className="text-center mb-6">
+                  <div className="flex justify-center items-center gap-3 mb-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin"></div>
+                      <Brain className="w-6 h-6 text-green-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-semibold mb-2">
+                    🧠 Gerando Relatório
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Analisando a transcrição e criando um relatório estruturado
+                  </p>
+                </div>
+
+                {/* Barra de progresso para geração */}
+                {progress && (
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <p className="text-lg font-medium text-green-600 mb-2">{progress.message}</p>
+                      <div className="flex justify-center items-center gap-2 text-sm text-muted-foreground">
+                        <span>Etapa {progress.current} de {progress.total}</span>
+                        <span>•</span>
+                        <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+                      </div>
+                    </div>
+                    
+                    <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-green-500 to-green-400 h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden" 
+                        style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading fallback sem progresso */}
+                {!progress && (
+                  <div className="space-y-4">
+                    <div className="flex justify-center">
+                      <div className="flex space-x-1">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                    <p className="text-center text-muted-foreground">Analisando com IA...</p>
+                  </div>
+                )}
+
+                <div className="mt-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    ✨ A IA está processando sua transcrição para criar um relatório detalhado
+                    <br />
+                    📋 Em breve você terá seu relatório médico estruturado
                   </p>
                 </div>
               </CardContent>
@@ -223,29 +335,29 @@ export default function Home() {
         )}
 
         {/* Report Display */}
-        {currentStep === 'report' && report && transcription && (
+        {currentStep === 'completed' && report && transcription && (
           <div className="space-y-8">
             {/* Transcription Preview */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Mic className="h-5 w-5" />
+                  <FileText className="h-5 w-5" />
                   Transcrição do Áudio
+                  <span className="text-sm text-muted-foreground font-normal">
+                    ({transcription.text.length} caracteres)
+                  </span>
                 </CardTitle>
-                <CardDescription>
-                  Processado em {transcription.timestamp.toLocaleString('pt-BR')}
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-muted/50 p-4 rounded-md max-h-32 overflow-y-auto">
-                  <p className="text-sm whitespace-pre-wrap">
+                <div className="bg-muted/50 p-4 rounded-md max-h-48 overflow-y-auto">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
                     {transcription.text}
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Generated Report */}
+            {/* Report Viewer */}
             <ReportViewer report={report} />
 
             {/* Actions */}
@@ -259,14 +371,6 @@ export default function Home() {
             </Card>
           </div>
         )}
-
-        {/* Footer */}
-        <div className="text-center mt-12 text-sm text-muted-foreground">
-          <p>
-            Doctor AI - Powered by OpenAI Whisper & GPT | 
-            Desenvolvido com Next.js e TypeScript
-          </p>
-        </div>
       </div>
     </div>
   )

@@ -7,6 +7,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  // Força o carregamento das variáveis de ambiente
+  env: {
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  },
+  // Enable standalone output for Docker
+  output: 'standalone',
 }
 
 module.exports = nextConfig

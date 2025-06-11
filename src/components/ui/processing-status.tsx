@@ -1,59 +1,17 @@
-import { Loader2, FileAudio, Scissors, Upload, Brain, Check } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from './alert'
-
-export interface ProcessingProgress {
-  stage: 'transcribing' | 'generating'
-  step: 'analyzing' | 'splitting' | 'processing' | 'merging'
-  current: number
-  total: number
-  message: string
-}
+import type { ProcessingProgress } from '@/entities'
+import { STAGE_CONFIG, STEP_CONFIG } from '@/shared/config/processing'
 
 interface ProcessingStatusProps {
   progress: ProcessingProgress | null
 }
 
-const stageConfig = {
-  transcribing: {
-    icon: FileAudio,
-    title: 'Transcrição de Áudio',
-    color: 'blue'
-  },
-  generating: {
-    icon: Brain,
-    title: 'Geração de Relatório',
-    color: 'green'
-  }
-}
-
-const stepConfig = {
-  analyzing: {
-    icon: FileAudio,
-    title: 'Analisando',
-    description: 'Verificando arquivo de áudio'
-  },
-  splitting: {
-    icon: Scissors,
-    title: 'Dividindo',
-    description: 'Separando em segmentos menores'
-  },
-  processing: {
-    icon: Upload,
-    title: 'Processando',
-    description: 'Enviando para processamento'
-  },
-  merging: {
-    icon: Check,
-    title: 'Finalizando',
-    description: 'Unindo resultados'
-  }
-}
-
 export function ProcessingStatus({ progress }: ProcessingStatusProps) {
   if (!progress) return null
 
-  const stageInfo = stageConfig[progress.stage]
-  const stepInfo = stepConfig[progress.step]
+  const stageInfo = STAGE_CONFIG[progress.stage]
+  const stepInfo = STEP_CONFIG[progress.step]
   const StageIcon = stageInfo.icon
   const StepIcon = stepInfo.icon
   

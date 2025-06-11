@@ -2,16 +2,17 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/shared/providers/theme-provider'
+import { LanguageProvider } from '@/shared/providers/language-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Doctor AI - Assistente Médico com IA',
+  title: 'Assistente Médico com IA',
   description: 'Aplicação para gravação de consultas, transcrição e geração de relatórios médicos usando IA',
   keywords: 'médico, IA, transcrição, consulta, relatório',
   authors: [{ name: 'Pedro Val' }],
-  creator: 'Doctor AI',
-  publisher: 'Doctor AI',
+  creator: 'Medical AI Assistant',
+  publisher: 'Medical AI Assistant',
   icons: {
     icon: [
       { url: '/icon.png', type: 'image/png' },
@@ -39,14 +40,16 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   )
